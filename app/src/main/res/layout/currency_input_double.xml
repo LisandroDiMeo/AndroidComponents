@@ -34,17 +34,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:text="1234"
-        android:inputType="number" />
-    <EditText
-        android:id="@+id/secondaryValue"
-        android:layout_width="40dp"
-        android:layout_height="wrap_content"
-        android:translationY="-18dp"
-        android:fontFamily="@font/poppins_extrabolditalic"
-        app:layout_constraintStart_toEndOf="@id/primaryValue"
-        app:layout_constraintTop_toTopOf="@id/primaryValue"
-        app:layout_constraintBottom_toBottomOf="@id/primaryValue"
-        android:inputType="number"
-        android:maxLength="2"/>
+        android:inputType="numberDecimal"
+        />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

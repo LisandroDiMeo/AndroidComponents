@@ -7,6 +7,10 @@ import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.view.animation.LinearInterpolator
 import android.widget.TextView
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.example.inputtypes.input.currency.CurrencyInputDouble
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -15,11 +19,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private lateinit var textView: TextView
+    private lateinit var editText: CurrencyInputDouble
+    private lateinit var shakeAnimation: Animation
 
     override fun onStart() {
         super.onStart()
         textView = findViewById<TextView>(R.id.textContainer)
-        startAnimation()
+        editText = findViewById(R.id.currencyEdit)
+        shakeAnimation = AnimationUtils.loadAnimation(this, R.anim.falling_text)
+        shakeInput()
     }
 
     private fun startAnimation(){
@@ -38,5 +46,12 @@ class MainActivity : AppCompatActivity() {
                 index = currentIndexChar
             }
         }.start()
+    }
+
+    private fun shakeInput(){
+        editText.onInputChanged = {
+            textView.text = it
+            textView.startAnimation(shakeAnimation)
+        }
     }
 }
