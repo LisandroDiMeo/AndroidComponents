@@ -28,14 +28,17 @@ class CurrencyInputDouble @JvmOverloads constructor(
     private var startCursor = 0
     private var endCursor = 0
     private var isPasting = false
+    private var isDeletingSeparator = false
 
     var onInputChanged : (String) -> Unit = {}
 
     private val watcher = object : TextWatcher{
         override fun beforeTextChanged(content: CharSequence?, start: Int, count: Int, after: Int) {
+            // TODO: cuando ingrese una comma, avanzar en el cursor + 1.
             println(content)
             prevContent = content.toString()
             startCursor = start
+            isDeletingSeparator = !content.isNullOrEmpty() && content.toString()[start]  == '.' && after < count
             endCursor = start + count
             isPasting = after > 1
         }
@@ -117,7 +120,7 @@ class CurrencyInputDouble @JvmOverloads constructor(
     private fun setDecimals() {
         var newText = ""
         binding.primaryValue.apply {
-            val aux = this.editableText.toString().split(DOT)
+            val aux = if(!isDeletingSeparator) this.editableText.toString().split(DOT) else prevContent.split(DOT)
             newText = if(aux.size > 1){
                 if(aux[1].length > 1) "${aux[0]}.${aux[1]}" else "${aux[0]}.0${aux[1]}"
             }else{
