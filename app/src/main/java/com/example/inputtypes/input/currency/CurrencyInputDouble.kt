@@ -43,8 +43,13 @@ class CurrencyInputDouble @JvmOverloads constructor(
         override fun onTextChanged(content: CharSequence?, p1: Int, p2: Int, p3: Int) {}
 
         override fun afterTextChanged(content: Editable?) {
+            val isDeleting = content.toString().length < prevContent.length
+            val oldSelectionStart = binding.primaryValue.selectionStart
+            val oldSelectionEnd = binding.primaryValue.selectionEnd
             if(content.isNullOrEmpty()) setInitialValue()
             if(isPasting) manageClipboardContent()
+            setDecimals()
+            binding.primaryValue.setSelection(oldSelectionEnd)
             onInputChanged.invoke(getCurrentText())
         }
     }
@@ -57,7 +62,7 @@ class CurrencyInputDouble @JvmOverloads constructor(
 
     fun getCurrentText() : String {
         return binding.primaryValue.text.split(DOT).run {
-            if (this.size > 1) {
+            if (this.size > 1 && this[1].isNotEmpty()) {
                 if(this[1].length > 1) "${this[0]},${this[1]}" else "${this[0]},0${this[1]}"
             }
             else{
@@ -105,6 +110,21 @@ class CurrencyInputDouble @JvmOverloads constructor(
         binding.primaryValue.apply {
             removeTextChangedListener(watcher)
             setText(INITIAL_PRIMARY_VALUE)
+            addTextChangedListener(watcher)
+        }
+    }
+
+    private fun setDecimals() {
+        var newText = ""
+        binding.primaryValue.apply {
+            val aux = this.editableText.toString().split(DOT)
+            newText = if(aux.size > 1){
+                if(aux[1].length > 1) "${aux[0]}.${aux[1]}" else "${aux[0]}.0${aux[1]}"
+            }else{
+                aux[0] + ".00"
+            }
+            removeTextChangedListener(watcher)
+            setText(newText)
             addTextChangedListener(watcher)
         }
     }
