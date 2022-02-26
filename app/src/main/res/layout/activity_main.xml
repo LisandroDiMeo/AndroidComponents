@@ -8,7 +8,11 @@
 
     <com.example.inputtypes.input.currency.CurrencyInputDouble
         android:id="@+id/currencyEdit"
+        android:background="@color/white"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        app:onChangeAnimation="@anim/falling_text"
+        app:defaultText="0.00"
+        app:dotSeparator="DOT"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

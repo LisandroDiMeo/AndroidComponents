@@ -3,18 +3,16 @@ package com.example.inputtypes.input.currency
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Context.CLIPBOARD_SERVICE
+import android.content.res.TypedArray
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.AttributeSet
 import android.view.LayoutInflater
-import android.view.View
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.getSystemService
-import androidx.core.text.set
-import androidx.core.widget.addTextChangedListener
 import com.example.inputtypes.R
 import com.example.inputtypes.databinding.CurrencyInputDoubleBinding
-import com.example.inputtypes.misc.ClipboardResolver
 
 class CurrencyInputDouble @JvmOverloads constructor(
     context: Context,
@@ -24,112 +22,39 @@ class CurrencyInputDouble @JvmOverloads constructor(
 
     private val binding = CurrencyInputDoubleBinding.inflate(LayoutInflater.from(context), this, true)
 
-    private var prevContent = ""
-    private var startCursor = 0
-    private var endCursor = 0
-    private var isPasting = false
-    private var isDeletingSeparator = false
+    private lateinit var textChangeAnimation : Animation
+    private var dotSeparator : CurrencySeparator = CurrencySeparator.DOT
 
     var onInputChanged : (String) -> Unit = {}
 
     private val watcher = object : TextWatcher{
-        override fun beforeTextChanged(content: CharSequence?, start: Int, count: Int, after: Int) {
-            // TODO: cuando ingrese una comma, avanzar en el cursor + 1.
-            println(content)
-            prevContent = content.toString()
-            startCursor = start
-            isDeletingSeparator = !content.isNullOrEmpty() && content.toString()[start]  == '.' && after < count
-            endCursor = start + count
-            isPasting = after > 1
-        }
+        override fun beforeTextChanged(content: CharSequence?, start: Int, count: Int, after: Int) {}
 
         override fun onTextChanged(content: CharSequence?, p1: Int, p2: Int, p3: Int) {}
 
         override fun afterTextChanged(content: Editable?) {
-            val isDeleting = content.toString().length < prevContent.length
-            val oldSelectionStart = binding.primaryValue.selectionStart
-            val oldSelectionEnd = binding.primaryValue.selectionEnd
-            if(content.isNullOrEmpty()) setInitialValue()
-            if(isPasting) manageClipboardContent()
-            setDecimals()
-            binding.primaryValue.setSelection(oldSelectionEnd)
+            binding.textContainer.apply {
+                text = getCurrentText()
+                startAnimation(textChangeAnimation)
+            }
             onInputChanged.invoke(getCurrentText())
         }
     }
 
     init {
         with(binding){
+            val typedArray : TypedArray = context.obtainStyledAttributes(attrs, R.styleable.CurrencyInputDouble, 0,0)
+            val defaultText = typedArray.getString(R.styleable.CurrencyInputDouble_defaultText) ?: INITIAL_PRIMARY_VALUE
+            val animationId = typedArray.getResourceId(R.styleable.CurrencyInputDouble_onChangeAnimation, 0)
+            dotSeparator = CurrencySeparator.values()[typedArray.getInt(R.styleable.CurrencyInputDouble_dotSeparator,0)]
+            textChangeAnimation = AnimationUtils.loadAnimation(context, animationId)
             primaryValue.addTextChangedListener(watcher)
+            typedArray.recycle()
         }
     }
 
     fun getCurrentText() : String {
-        return binding.primaryValue.text.split(DOT).run {
-            if (this.size > 1 && this[1].isNotEmpty()) {
-                if(this[1].length > 1) "${this[0]},${this[1]}" else "${this[0]},0${this[1]}"
-            }
-            else{
-                "${this[0]},00"
-            }
-        }
-    }
-
-    private fun manageClipboardContent(){
-        binding.primaryValue.removeTextChangedListener(watcher)
-        val clipboardText = ClipboardResolver.getClipboardText(context)
-        var integerPart = ""
-        var decimalPart = ""
-        when {
-            clipboardText.contains(COMMA) -> {
-                val splittedWithComma = clipboardText.split(COMMA)
-                integerPart = splittedWithComma[0]
-                decimalPart = splittedWithComma[1]
-            }
-            clipboardText.contains(DOT) -> {
-                val splittedWithDot = clipboardText.split(DOT)
-                integerPart = splittedWithDot[0]
-                decimalPart = splittedWithDot[1]
-            }
-            else -> {
-                integerPart = clipboardText
-            }
-        }
-        integerPart.filter { it.isDigit() }
-        decimalPart.filter { it.isDigit() }
-        val newText =
-        if(startCursor != endCursor)
-            prevContent.substring(0, startCursor) + integerPart + prevContent.substring(endCursor, prevContent.length)
-        else
-            prevContent.substring(0, startCursor) + integerPart + prevContent.substring(startCursor, prevContent.length)
-
-        with(binding){
-            val number = (newText+decimalPart).replace(COMMA, DOT).toDouble()
-            primaryValue.setText(number.toString())
-            primaryValue.addTextChangedListener(watcher)
-        }
-    }
-
-    private fun setInitialValue() {
-        binding.primaryValue.apply {
-            removeTextChangedListener(watcher)
-            setText(INITIAL_PRIMARY_VALUE)
-            addTextChangedListener(watcher)
-        }
-    }
-
-    private fun setDecimals() {
-        var newText = ""
-        binding.primaryValue.apply {
-            val aux = if(!isDeletingSeparator) this.editableText.toString().split(DOT) else prevContent.split(DOT)
-            newText = if(aux.size > 1){
-                if(aux[1].length > 1) "${aux[0]}.${aux[1]}" else "${aux[0]}.0${aux[1]}"
-            }else{
-                aux[0] + ".00"
-            }
-            removeTextChangedListener(watcher)
-            setText(newText)
-            addTextChangedListener(watcher)
-        }
+        return binding.primaryValue.text.toString().replace(DOT, if(dotSeparator == CurrencySeparator.DOT) DOT else COMMA)
     }
 
     companion object {
@@ -139,3 +64,6 @@ class CurrencyInputDouble @JvmOverloads constructor(
     }
 
 }
+
+enum class CurrencySeparator {DOT, COMMA}
+

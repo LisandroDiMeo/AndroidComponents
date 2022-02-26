@@ -4,5 +4,5 @@
         android:duration="100"
         android:fromYDelta="0"
         android:interpolator="@anim/shake_cycle"
-        android:toYDelta="10" />
+        android:toYDelta="20" />
 </set>
